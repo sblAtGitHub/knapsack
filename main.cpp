@@ -10,7 +10,7 @@ int main(int argc, char *argv[] ) {
 	
 	//test StringToBits
 	std::string s = "test";
-	std::vector<int> bits = StringToBits(s);
+	std::vector<uint64_t> bits = StringToBits(s);
 	std::cout << "StringToBits(\"" << s << "\"): ";
 	for(unsigned int i=0; i<bits.size(); ++i) {
 		if(i>0 && !(i%8)) std::cout << '.';
