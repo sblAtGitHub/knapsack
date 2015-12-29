@@ -1,6 +1,8 @@
-# knapsack
-https://github.com/sblAtGitHub/knapsack.git
+# Merkle-Hellman Public-Key Cryptosystem
+## This project is part of the lecture "Algorithm Engineering" at the [FSU Jena](http://theinf2.informatik.uni-jena.de/Lectures.html). Code and documentation is available on [GitHub](https://github.com/sblAtGitHub/knapsack.git).
 
-Implementation of Merkle-Hellman Knapsack Cryptosystem
-
-- the first task is to implement some helper functions in knapsackLib
+Aim of the project is the implementation of algorithms optimized for a massive parallel environment including techniques for multicore processing, vectorisation and distributed computing. This will be achieved by implementing some algorithms around the Merkle-Hellman cryptosystem, which uses the so called knapsack-problem to turn the decryption of messages into a NP-complete problem. Main focus is set to implement an optimized algorithm for breaking the cryptosystem by sheer computing power of several teraflops using OpenMP, SIMD and MPI. Beside learning and using the mentioned techniques, this will demonstrate the impossibility of resolving this class of problem with increasing key length.  
+  
+The MH-Cryptosystem deals with very big integral numbers in the range of 2^100 up to 2^200 bits. Therefore the use of a library like GMP or OpenSSL for bignum-datatypes and -operations seems advisable. On the other hand, the use of library datatypes and operations reduces the possibilities for doing own optimizations. That's why the core functions will be implemented in a bignum and 64-bit version. This will give the option to compare the two implementations depending on ressource consumption and speed and to learn about bignum's behaviour in a vectorized, cache-optimized environment.  
+  
+[Published](http://ieeexplore.ieee.org/xpl/articleDetails.jsp?reload=true&tp=&arnumber=1055927) in 1978, the MH-Cryptosystem was introduced almost the same time as RSA. In contrast to RSA, cryptologists found a way to break the system by attacking the public key to open the trapdoor function and [published](http://ieeexplore.ieee.org/xpl/articleDetails.jsp?arnumber=4568386) their results in 1982. Even later improvements to the system, like the use of an iterative method for key generation, were proved to be surmountable. That's why the MH-Cryptosystem is not in use, although the basic problem, a form of the knapsack-problem, still can't be resolved in an efficiant way.
