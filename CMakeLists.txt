@@ -10,5 +10,5 @@ endif()
 find_package(Boost 1.56.0 REQUIRED)
 include_directories(${Boost_INCLUDE_DIRS})
 
-add_executable(knapsack knapsackLib.hpp knapsackLib.cpp main.cpp)
+add_executable(knapsack knapsackLib.hpp knapsackLib.cpp test.hpp test.cpp main.cpp)
 
