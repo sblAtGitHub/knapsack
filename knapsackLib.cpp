@@ -7,8 +7,8 @@ bool IsCoPrime (uint64_t aX, uint64_t aY) {
 	return (aX<aY) ? IsCoPrime(aY,aX) : !(aX%aY) ? (aY==1) : IsCoPrime (aY, aX%aY);
 }
 
-std::vector<int> StringToBits(std::string aString) {
-	std::vector<int> result(aString.size() * CHAR_BITS, 0);
+aligned_vector<int> StringToBits(std::string aString) {
+	aligned_vector<int> result(aString.size() * CHAR_BITS, 0);
 	for(unsigned int i=0; i<aString.size(); ++i) {
 		for(int j=0; j<CHAR_BITS; ++j) {
 			result[(int)i*CHAR_BITS+j] = (aString[i] >> (CHAR_BITS-1-j)) & 1;
@@ -17,7 +17,7 @@ std::vector<int> StringToBits(std::string aString) {
 	return result;
 }
 
-std::string BitsToString(std::vector<int> aBits) {
+std::string BitsToString(aligned_vector<int> aBits) {
 	int len = aBits.size()/CHAR_BITS;
 	std::string result(len, 0);
 	for(int i=0; i<len; ++i) {
@@ -33,22 +33,10 @@ std::string BitsToString(std::vector<int> aBits) {
 	return result;
 }
 
-void IncrementVector(std::vector<int>& aVector) {
-	for(int i=aVector.size()-1; i>=0; --i) {
-		if(aVector[i] == 0 ) {
-            aVector[i] = 1;
-            break;
-		}
-        aVector[i] = 0;
-	}
-}
-
 uint64_t GetDotProduct_64(std::vector<int>& aBits, std::vector<uint64_t>& aKey) {
 	uint64_t result=0;
 	for(unsigned int i=0; i<aBits.size(); ++i) {
-		if(aBits[i]) {
-			result += aKey[i];
-		}
+		result += aBits[i] * aKey[i];
 	}
 	return result;
 }
@@ -87,41 +75,37 @@ std::vector<uint64_t> Encrypt_64(std::vector<int>& aMessage, std::vector<uint64_
 	return result;
 }
 
-std::vector<int> Break_64(std::vector<uint64_t>& aCrypt, std::vector<uint64_t>& aKey) {
-	int n = aKey.size();
-	std::vector<int> result(aCrypt.size()*aKey.size(), 0);
-	
-	//just for interest, compute the average tries (out of 100%=2^n) needed, to find the right combination for each segment
-	double ratio=0;
-	
-	for(unsigned int i=0; i<aCrypt.size(); ++i) {
-		std::vector<int> test(n, 0);
-		for(int t=0; t<pow(2, n); ++t) {
-			if(aCrypt[i] == GetDotProduct_64(test, aKey)) {
-				for(unsigned int r=0; r<test.size(); ++r) {
-					result[(i*aKey.size())+r] = test[r];
-				}
-				ratio += (double)t*100/pow(2, n);
-				break;
+void ResolveDP_64_P(uint64_t const* aKeyVector, uint64_t const aKeyLength, uint64_t const aDP, int * aPlainVector, int const aPlainVectorPosition) {
+	uint64_t n_max = pow(2, aKeyLength);
+	#pragma omp parallel
+	{
+		#pragma omp for schedule(static)
+		for(uint64_t n=0; n<n_max; ++n) {		
+			uint64_t result=0;
+			#pragma omp simd aligned(aKeyVector,aPlainVector:64) reduction(+:result)
+			for(int i=0; i<aKeyLength; ++i) {
+				result += ((n >> i) & 1) * aKeyVector[i];
 			}
-			else {
-				IncrementVector(test);
+			if(aDP == result) {
+				for(int i=0; i<aKeyLength; ++i) {
+					aPlainVector[aPlainVectorPosition + i] = (n >> i) & 1;
+				}
+				#pragma omp cancel for
 			}
 		}
 	}
-	
-	ratio = ratio/aCrypt.size();
-	//std::cout << "ratio=" << ratio << std::endl;
-	return result;
 }
-
-
-
-
-
-
-
-
-
-
-
+	
+void ResolveDP_64_S(uint64_t const* aKeyVector, uint64_t const aKeyLength, uint64_t const aDP, int * aPlainVector, int const aPlainVectorPosition) {
+	for(uint64_t n=0; n<pow(2, aKeyLength); ++n) {		
+		uint64_t result=0;
+		#pragma omp simd aligned(aKeyVector,aPlainVector:64) reduction(+:result)
+		for(int i=0; i<aKeyLength; ++i) {
+			aPlainVector[aPlainVectorPosition + i] = (n >> i) & 1;
+			result += aPlainVector[aPlainVectorPosition + i] * aKeyVector[i];
+		}
+		if(aDP == result) {
+			return;
+		}
+	}
+}

@@ -12,24 +12,15 @@ bool TEST_IsCoPrime() {
 }
 
 bool TEST_StringToBits() {
-	std::vector<int> test {0,1,0,1,1,0,0,0};
+	aligned_vector<int> test {0,1,0,1,1,0,0,0};
 	if(test == StringToBits("X"))
 		return true;
 	return false;
 }
 
 bool TEST_BitsToString() {
-	std::vector<int> test {0,1,0,1,1,0,0,0};
+	aligned_vector<int> test {0,1,0,1,1,0,0,0};
 	if("X" == BitsToString(test))
-		return true;
-	return false;
-}
-
-bool TEST_IncrementVector() {
-	std::vector<int> v1 {0,1,0,1,1,0,0,0};
-	std::vector<int> v2 {0,1,0,1,1,0,0,1};
-	IncrementVector(v1);
-	if(v1 == v2)
 		return true;
 	return false;
 }
@@ -62,15 +53,6 @@ bool TEST_Encrypt_64() {
 	std::vector<uint64_t> key {1,2};
 	std::vector<uint64_t> crypt {1,2};
 	if(crypt == Encrypt_64(message, key))
-		return true;
-	return false;
-}
-
-bool TEST_Break_64() {
-	std::vector<int> message {1,0,0,1};
-	std::vector<uint64_t> key {1,2};
-	std::vector<uint64_t> crypt {1,2};
-	if(message == Break_64(crypt, key))
 		return true;
 	return false;
 }
