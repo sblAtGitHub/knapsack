@@ -35,13 +35,15 @@ void CreateKey_64(int aSize, std::string aPublicKeyFile);
 
 void Encrypt_64(std::string aMessage, std::string aPublicKeyFile, std::string aCryptFile);
 
-void Crack_64(std::string aPublicKeyFile, std::string aCryptFile);
+void Crack_64(std::string aPublicKeyFile, std::string aCryptFile, int aVersion);
 
 //finds the vector (decrypted text) to resolve the given key to the given dot product (encrypted text)
 //parallel
 void ResolveDP_64_P(uint64_t const* aKeyVector, uint64_t const aKeyLength, uint64_t const aDP, int * aPlainVector, int const aPlainVectorPosition);
 //parallel, vectorized
 void ResolveDP_64_PV(uint64_t const* aKeyVector, uint64_t const aKeyLength, uint64_t const aDP, int * aPlainVector, int const aPlainVectorPosition);
+//parallel, vectorized
+void ResolveDP_64_PV2(uint64_t const* aKeyVector, uint64_t const aKeyLength, uint64_t const aDP, int * aPlainVector, int const aPlainVectorPosition);
 //sequential
 void ResolveDP_64_S(uint64_t const* aKeyVector, uint64_t const aKeyLength, uint64_t const aDP, int * aPlainVector, int const aPlainVectorPosition);
 

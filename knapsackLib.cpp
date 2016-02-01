@@ -98,7 +98,7 @@ void Encrypt_64(std::string aMessage, std::string aPublicKeyFile, std::string aC
 	}
 }
 
-void Crack_64(std::string aPublicKeyFile, std::string aCryptFile) {
+void Crack_64(std::string aPublicKeyFile, std::string aCryptFile, int aVersion) {
 
 	//read public key from file
 	aligned_vector<uint64_t> publicKeyVector;
@@ -127,14 +127,18 @@ void Crack_64(std::string aPublicKeyFile, std::string aCryptFile) {
    	int keyLength = (int) publicKeyVector.size();
 	int cryptLength = (int) cryptVector.size();   	
    	aligned_vector<int> plainVector(keyLength*cryptLength);
-   	for(unsigned int i=0; i<cryptVector.size(); ++i) {    
-    	ResolveDP_64_P(publicKeyVector.data(), keyLength, cryptVector[i], plainVector.data(), i*keyLength);
+   	for(unsigned int i=0; i<cryptVector.size(); ++i) {
+   		if(aVersion == 1)
+			ResolveDP_64_P(publicKeyVector.data(), keyLength, cryptVector[i], plainVector.data(), i*keyLength);
+		if(aVersion == 2)
+			ResolveDP_64_PV2(publicKeyVector.data(), keyLength, cryptVector[i], plainVector.data(), i*keyLength);
     }
     
     std::string plainString = BitsToString(plainVector);
 	std::cout << plainString << std::endl;
 }
 
+//version with one big test-vector (quite memory consuming)
 void ResolveDP_64_PV(uint64_t const* aKeyVector, uint64_t const aKeyLength, uint64_t const aDP, int * aPlainVector, int const aPlainVectorPosition) {
 
 	uint64_t n_max = pow(2, aKeyLength);
@@ -161,6 +165,48 @@ void ResolveDP_64_PV(uint64_t const* aKeyVector, uint64_t const aKeyLength, uint
 				#pragma omp simd aligned(pTestVector,aPlainVector:64)
 				for(int i=0; i<aKeyLength; ++i) {
 					aPlainVector[aPlainVectorPosition + i] = pTestVector[n*aKeyLength+i];
+				}
+				#pragma omp cancel for
+			}
+		}
+	}
+}
+
+//version with a short test-vector for every thread which is re-initialized in every loop step)
+void ResolveDP_64_PV2(uint64_t const* aKeyVector, uint64_t const aKeyLength, uint64_t const aDP, int * aPlainVector, int const aPlainVectorPosition) {
+
+	uint64_t n_max = pow(2, aKeyLength);
+	
+	int nThreads = 0;
+	#pragma omp parallel
+	{
+		#pragma omp single
+		nThreads = omp_get_num_threads();
+	}
+
+	int maxKeyLength = 64;
+	aligned_vector<uint64_t> testVector(maxKeyLength * nThreads, 0);
+	
+	#pragma omp parallel
+	{
+		//get aligned section of test vector and plain vector for each thread
+		int threadNo = omp_get_thread_num();
+		uint64_t * pThreadTestVector = &testVector[threadNo * maxKeyLength];
+		int * pThreadPlainVector = &aPlainVector[aPlainVectorPosition];				
+		
+		#pragma omp for schedule(static)
+		for(uint64_t n=0; n<n_max; ++n) {		
+			uint64_t result=0;
+						
+			#pragma omp simd aligned(pThreadTestVector,aKeyVector:64) reduction(+:result)
+			for(int i=0; i<aKeyLength; ++i) {
+				pThreadTestVector[i] = ((n >> i) & 1);
+				result += pThreadTestVector[i] * aKeyVector[i];
+			}
+			if(aDP == result) {
+				#pragma omp simd aligned(pThreadTestVector,pThreadPlainVector:64)
+				for(int i=0; i<aKeyLength; ++i) {
+					pThreadPlainVector[i] = pThreadTestVector[i];
 				}
 				#pragma omp cancel for
 			}
